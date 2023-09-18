@@ -14,6 +14,14 @@ from llm import Agent
 
 # NUM_PROCESS = 10
 
+cn_urls = []
+
+with open('web_cn.txt', 'r') as f:
+    for line in f:
+        url = line.strip()
+        url = "http://" + url if not url.startswith("http") else url
+        cn_urls.append(url)
+
 async def run(html):
     agent = Agent()
     question, anwser = await agent.get_model_output(html)
@@ -31,10 +39,11 @@ for file in tqdm(files):
     
 
 exist_data = []
-with open('stage3.jsonl', 'r') as f:
-    for line in f:
-        line = json.loads(line)
-        exist_data.append(line)
+if os.path.exists('stage3_cn.jsonl'):
+    with open('stage3_cn.jsonl', 'r') as f:
+        for line in f:
+            line = json.loads(line)
+            exist_data.append(line)
 exist_urls = [data['url'] for data in exist_data]
 data_num = len(exist_data)
 
@@ -45,12 +54,14 @@ async def main():
         url = html['url']
         if url in exist_urls:
             continue
+        if url not in cn_urls:
+            continue
         try:
             question, anwser = await run(html['html'])
-            img = f"/workspace/hanyu/ryl/phase2/screenshot/screenshot_{html['id']}.png"
+            img = f"/workspace/hanyu/ryl/phase2/screenshot_mark/screenshot_{html['id']}.png"
             html_ = html['html']
-            with open('stage3.jsonl', 'a') as f:
-                f.write(json.dumps({'url': url, 'usage': anwser, 'img': img, 'html': html_, 'source': question, 'id': data_id}) + '\n')
+            with open('stage3_cn.jsonl', 'a') as f:
+                f.write(json.dumps({'url': url, 'target': anwser, 'img': img, 'html': html_, 'source': question, 'id': data_id}) + '\n')
             data_id += 1
         except:
             continue

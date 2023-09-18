@@ -44,15 +44,20 @@ async def get_rect(page, xpath_dict):
     return rect_list
  
 async def verify(p, url: str, act_type: str, param: str):
+    if act_type == 'Click' or act_type == 'Hover' or act_type == 'Type':
+        if len(param[0]) == 2:
+            return True
+        else:
+            return False
     browser = await p.chromium.launch(headless=True)
     context = await browser.new_context(viewport={"width": 1080, "height": 720})
     # await context.tracing.start(screenshots=True, snapshots=True, sources=True)
     
     page = await context.new_page()
 
-    await page.goto(url)
+    await page.goto(url, timeout=NAV_TIME_OUT)
     
-    await page.wait_for_load_state()
+    await page.wait_for_load_state(timeout=NAV_TIME_OUT)
 
     # get page content
     ctx = await page.content()
@@ -81,12 +86,12 @@ async def verify(p, url: str, act_type: str, param: str):
             pass
         if act_type == "Scroll up":
             n = param[0]
-            delta_y = int(-720 * n) # height * n pages
-            await page.mouse.wheel(0, delta_y)
+            n = int(n)
+            pass
         if act_type == "Scroll down":
             n = param[0]
-            delta_y = int(720 * n) # height * n pages
-            await page.mouse.wheel(0, delta_y)
+            n = int(n)
+            pass
         elif act_type == "Click":
             tag = param[0]
             xpath = get_xpath(tree, tag)
@@ -110,11 +115,13 @@ async def verify(p, url: str, act_type: str, param: str):
             text = param[0]
             print("The Answer is: " + text)
         elif act_type == "Login":
-            input("Encounter Login Page, Please Login and Press Enter to Continue")
-        elif act_type == "Verify":
-            input("Encounter Verification Page, Please Login and Press Enter to Continue")
-        else:
             pass
+        elif act_type == "Verify":
+            pass
+        else:
+            await context.close()
+            await browser.close()
+            return False
         
         await context.close()
         await browser.close()
